@@ -9,8 +9,14 @@
 import Foundation
 
 class MenuController {
+    static let shared = MenuController()
     let baseURL = URL(string: "http://localhost:8090/")!
-    
+    var order = Order() {
+        didSet {
+            NotificationCenter.default.post(name: MenuController.orderUpdatedNotification, object: nil)
+        }
+    }
+    static let orderUpdatedNotification = Notification.Name("Menucontroller.orderUpdated")
     //fetch Categories
     func fetchCategories(completion: @escaping ([String]?) -> Void) {
         let categoryURL = baseURL.appendingPathComponent("categories")
@@ -35,26 +41,24 @@ class MenuController {
     
     //fetchMenuItems
     func fetchMenuItems(forCategory categoryName: String, completion:
-    @escaping ([MenuItem]?) -> Void) {
+        @escaping ([MenuItem]?) -> Void) {
         let initialMenuURL = baseURL.appendingPathComponent("menu")
         var components = URLComponents(url: initialMenuURL,
-        resolvingAgainstBaseURL: true)!
+                                       resolvingAgainstBaseURL: true)!
         components.queryItems = [URLQueryItem(name: "category",
-        value: categoryName)]
+                                              value: categoryName)]
         let menuURL = components.url!
         print(menuURL)
         let task = URLSession.shared.dataTask(with: menuURL) { (data, response, error) in
             let jsonDecoder = JSONDecoder()
-            let menuItems = try? jsonDecoder.decode(MenuItems.self,
-                                                    from: data!)
-            print(menuItems)
-              /*  if let data = data,
-                    let menuItems = try? jsonDecoder.decode(MenuItems.self,
-                      from: data) {
-                    completion(menuItems.items)
-                } else {
-                    completion(nil)
-                }*/
+            if let data = data,
+                let menuItems = try? jsonDecoder.decode(MenuItems.self,
+                                                        from: data) {
+                completion(menuItems.items)
+            } else {
+                completion(nil)
+            }
+            
         }
         task.resume()
     }
